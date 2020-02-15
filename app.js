@@ -1,20 +1,11 @@
-const rp = require("request-promise");
-const cheerio = require("cheerio");
+const puppeteer = require("puppeteer");
 
-const options = {
-  transform: body => {
-    return cheerio.load(body);
-  }
-};
-
-const name = process.argv[2];
-
-rp.get("http://qiita.com/organizations/" + name + "/members", options)
-  .then($ => {
-    $("span", ".od-MemberCardHeaderIdentities_name").each((i, elem) => {
-      console.log($(elem).text());
-    });
-  })
-  .catch(error => {
-    console.error("Error:", error);
-  });
+(async () => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto("http://qiita.com/organizations/" + process.argv[2]);
+  const selector = ".of-ItemLink_header-title";
+  let elems = await page.$$eval(selector, es => es.map(e => [e.textContent, e.href]));
+  console.log(elems);
+  await browser.close();
+})();
