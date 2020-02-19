@@ -12,6 +12,7 @@ const app = new App({
 
 const fs = require("fs");
 const path = "latest.text";
+const channel = process.env.SLACK_CHANNEL
 
 let data;
 fs.readFile(path, "utf8", function (_, file) {
@@ -38,7 +39,7 @@ fs.readFile(path, "utf8", function (_, file) {
   if (posts.length == 0) return;
 
   await app.client.chat.postMessage({
-    channel: "CPBA9C0A1",
+    channel: channel,
     blocks:
       [
         {
@@ -54,7 +55,7 @@ fs.readFile(path, "utf8", function (_, file) {
 
   await posts.forEach(post => {
     app.client.chat.postMessage({
-      channel: "CPBA9C0A1",
+      channel: channel,
       text: post[1],
       token: process.env.SLACK_BOT_TOKEN
     });
