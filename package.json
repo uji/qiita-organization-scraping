@@ -13,6 +13,7 @@
     "eslint": "^6.8.0"
   },
   "dependencies": {
-    "puppeteer-core": "^2.1.1"
+    "@slack/bolt": "^1.6.0",
+    "puppeteer": "^2.1.1"
   }
 }
