@@ -12,7 +12,7 @@ const app = new App({
 
 const fs = require("fs");
 const path = "latest.text";
-const channel = process.env.SLACK_CHANNEL
+const channel = process.env.SLACK_CHANNEL;
 
 let data;
 fs.readFile(path, "utf8", function (_, file) {
