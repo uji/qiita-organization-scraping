@@ -1,22 +1,33 @@
+const AWS = require("aws-sdk");
+const s3 = new AWS.S3({ region: "ap-northeast-1" });
 const chromium = require("chrome-aws-lambda");
 const { App, ExpressReceiver } = require("@slack/bolt");
 
 const receiver = new ExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET
 });
-
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   receiver: receiver
 });
 
+let s3Params = {
+  Bucket: process.env.BACKET_NAME,
+  Key: process.env.FILE_NAME,
+};
 const channel = process.env.SLACK_CHANNEL;
 
 exports.handler = async (event, context) => {
   let browser = null;
+  let latest = "";
   let posts = [];
 
   try {
+    await s3.getObject(s3Params, (err, data) => {
+      if (err) return context.fail(err);
+      else latest = data.Body.toString();
+    });
+
     browser = await chromium.puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -31,9 +42,12 @@ exports.handler = async (event, context) => {
     let elems = await page.$$eval(selector, es => es.map(e => [e.textContent, e.href]));
 
     await elems.some(elem => {
+      if (elem[0] === latest) {
+        return true;
+      }
       posts.push(elem);
     });
-    if (posts.length == 0) return;
+    if (posts.length == 0) return context.done();
 
     await app.client.chat.postMessage({
       channel: channel,
@@ -56,6 +70,12 @@ exports.handler = async (event, context) => {
         text: post[1],
         token: process.env.SLACK_BOT_TOKEN
       });
+    });
+
+    s3Params.Body = posts[0][0];
+
+    await s3.putObject(s3Params, (err) => {
+      if (err) return context.fail(err);
     });
   } catch (error) {
     return context.fail(error);
