@@ -1,3 +1,4 @@
+
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3({ region: "ap-northeast-1" });
 const chromium = require("chrome-aws-lambda");
@@ -12,15 +13,31 @@ const app = new App({
 });
 
 let s3Params = {
-  Bucket: process.env.BACKET_NAME,
+  Bucket: process.env.BUCKET_NAME,
   Key: process.env.FILE_NAME,
 };
 const channel = process.env.SLACK_CHANNEL;
+function postSection (post) {
+  return {
+    "type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*<" + post[1] + "|" + post[0] +">* \n"
+			},
+      // "accessory": {
+			// 	"type": "image",
+			// 	"image_url": "https://s3-media3.fl.yelpcdn.com/bphoto/c7ed05m9lC2EmA3Aruue7A/o.jpg",
+			// 	"alt_text": "alt text for image"
+			// }
+  };
+}
+
 
 exports.handler = async (event, context) => {
   let browser = null;
   let latest = "";
   let posts = [];
+  let blocks = "";
 
   try {
     await s3.getObject(s3Params, (err, data) => {
@@ -49,18 +66,22 @@ exports.handler = async (event, context) => {
     });
     if (posts.length == 0) return context.done();
 
+    blocks = [{
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Qiitaに新しい記事が投稿されました*"
+      }
+    }];
+
+    await posts.forEach(post => {
+      blocks.push(postSection(post));
+    });
+    console.log(blocks);
+
     await app.client.chat.postMessage({
       channel: channel,
-      blocks:
-        [
-          {
-            "type": "section",
-            "text": {
-              "type": "mrkdwn",
-              "text": "*Qiitaに新しい記事が投稿されました*"
-            }
-          }
-        ],
+      blocks: blocks,
       token: process.env.SLACK_BOT_TOKEN
     });
 
@@ -85,5 +106,6 @@ exports.handler = async (event, context) => {
     }
   }
 
-  return context.succeed(posts);
+  return context.succeed(blocks);
 };
+;
