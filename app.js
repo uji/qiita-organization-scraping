@@ -22,13 +22,13 @@ function postSection (post) {
     "type": "section",
 			"text": {
 				"type": "mrkdwn",
-				"text": "*<" + post[1] + "|" + post[0] +">* \n"
+        "text": "*<" + post[1] + "|" + post[0] +">* \nby <" + post[3] + "|" + post[2] + ">"
 			},
-      // "accessory": {
-			// 	"type": "image",
-			// 	"image_url": "https://s3-media3.fl.yelpcdn.com/bphoto/c7ed05m9lC2EmA3Aruue7A/o.jpg",
-			// 	"alt_text": "alt text for image"
-			// }
+      "accessory": {
+				"type": "image",
+				"image_url": post[4],
+				"alt_text": "alt text for image"
+			}
   };
 }
 
@@ -55,15 +55,16 @@ exports.handler = async (event, context) => {
     let page = await browser.newPage();
 
     await page.goto("http://qiita.com/organizations/" + process.env.ORGANIZATION_NAME);
-    const selector = ".of-ItemLink_header-title";
-    let elems = await page.$$eval(selector, es => es.map(e => [e.textContent, e.href]));
+    let textElems = await page.$$eval(".of-ItemLink_header-title", es => es.map(e => [e.textContent, e.href]));
+    let userElems = await page.$$eval(".of-ItemLink_author", es => es.map(e => [e.textContent, e.href]));
+    let imgElems = await page.$$eval(".of-ItemLink_userImage > img", es => es.map(e => e.src));
 
-    await elems.some(elem => {
-      if (elem[0] === latest) {
-        return true;
+    for (let i = 0; i < textElems.length; i++) {
+      if (textElems[i][0] === latest) {
+        break;
       }
-      posts.push(elem);
-    });
+      posts.push([textElems[i][0], textElems[i][1], userElems[i][0], userElems[i][1], imgElems[i]]);
+    }
     if (posts.length == 0) return context.done();
 
     blocks = [{
@@ -75,6 +76,7 @@ exports.handler = async (event, context) => {
     }];
 
     await posts.forEach(post => {
+      blocks.push({"type": "divider"});
       blocks.push(postSection(post));
     });
     console.log(blocks);
@@ -108,4 +110,3 @@ exports.handler = async (event, context) => {
 
   return context.succeed(blocks);
 };
-;
