@@ -83,16 +83,9 @@ exports.handler = async (event, context) => {
 
     await app.client.chat.postMessage({
       channel: channel,
+      unfurl_links: false,
       blocks: blocks,
       token: process.env.SLACK_BOT_TOKEN
-    });
-
-    await posts.forEach(post => {
-      app.client.chat.postMessage({
-        channel: channel,
-        text: post[1],
-        token: process.env.SLACK_BOT_TOKEN
-      });
     });
 
     s3Params.Body = posts[0][0];
