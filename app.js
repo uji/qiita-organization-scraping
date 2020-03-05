@@ -1,4 +1,3 @@
-
 const AWS = require("aws-sdk");
 const s3 = new AWS.S3({ region: "ap-northeast-1" });
 const chromium = require("chrome-aws-lambda");
